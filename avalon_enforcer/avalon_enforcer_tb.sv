@@ -25,8 +25,9 @@ module unknown_module_tb();
 	logic clk;
 	logic rst;
 
-	avalon_st_if #(.DATA_WIDTH_IN_BYTES(DATA_WIDTH_IN_BYTES));
-	avalon_st_if #(.DATA_WIDTH_IN_BYTES(DATA_WIDTH_IN_BYTES));
+	avalon_st_if #(.DATA_WIDTH_IN_BYTES(DATA_WIDTH_IN_BYTES)) untrusted_msg();
+	avalon_st_if #(.DATA_WIDTH_IN_BYTES(DATA_WIDTH_IN_BYTES)) enforced_msg();
+
 
 	logic 			missing_sop_indi;
 	logic 			unexpected_sop_indi;

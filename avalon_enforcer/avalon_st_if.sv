@@ -32,16 +32,4 @@ interface avalon_st_if #(parameter DATA_WIDTH_IN_BYTES = 16);
 
 	modport master 	(output data, output valid, input rdy, output sop, output eop, output empty);
 
-	task CLEAR_MASTER();
-		data 	= '0;
-		valid 	= 1'b0;
-		sop 	= 1'b0;
-		eop 	= 1'b0;
-		empty 	= 0;
-	endtask : CLEAR_MASTER
-
-	task CLEAR_SLAVE();
-		rdy 	= 1'b1;
-	endtask : CLEAR_SLAVE
-
 endinterface
