@@ -20,7 +20,7 @@
 
 module avalon_enforcer
 #(
-	parameter int DATA_WIDTH_IN_BYTES = 1'b0
+	parameter int DATA_WIDTH_IN_BYTES = 16
 )
 (
 	input logic 			clk,
@@ -30,7 +30,7 @@ module avalon_enforcer
 	avalon_st_if.master 	enforced_msg,
 
 	output logic 			missing_sop_indi,
-	output logic 			unexpected_sop_indi,
+	output logic 			unexpected_sop_indi
 
 );
 
@@ -43,7 +43,7 @@ typedef enum {
 logic 						enb;
 logic 	[DATA_WIDTH_IN_BYTES - 1 : 0] 	cleaner;
 logic 	[(DATA_WIDTH_IN_BYTES*8) - 1 : 0] 	data_mid;
-logic 	[log2up_func(DATA_WIDTH_IN_BYTES) - 1 : 0] 	empty_mid;
+logic 	[$size(untrusted_msg.empty) - 1 : 0] 	empty_mid;
 msg_sm_t 		state;
 
 
@@ -51,9 +51,9 @@ msg_sm_t 		state;
 // state machine
 always_ff @(posedge clk or negedge rst) begin
 	if(~rst) begin
-		current_state <= BETWEEN_MSG;
+		state <= BETWEEN_MSG;
 	end else begin
-		case (current_state)
+		case (state)
 			BETWEEN_MSG: begin
 				    missing_sop_indi <= (untrusted_msg.valid & !untrusted_msg.sop);
 				    unexpected_sop_indi <= 'b0;
@@ -61,7 +61,7 @@ always_ff @(posedge clk or negedge rst) begin
 				    enforced_msg.valid <= (untrusted_msg.valid & untrusted_msg.sop);
 				    enb <= (untrusted_msg.valid & untrusted_msg.sop);
 				if (untrusted_msg.sop & untrusted_msg.valid & untrusted_msg.ready & !untrusted_msg.eop) begin
-					current_state <= IN_MSG;
+					state <= IN_MSG;
 				end
 			end
 			IN_MSG: begin
@@ -70,8 +70,8 @@ always_ff @(posedge clk or negedge rst) begin
 			    enforced_msg.sop <= 'b0;
 			    enforced_msg.valid <= untrusted_msg.valid;
 			    enb <= untrusted_msg.valid;
-				if (valid_in & eop_in & ready_in ) begin
-					current_state <= BETWEEN_MSG;
+				if (untrusted_msg.valid & untrusted_msg.eop & untrusted_msg.valid.ready ) begin
+					state <= BETWEEN_MSG;
 				end
 			end	
 		endcase
@@ -113,7 +113,7 @@ always_comb begin
 	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
 		if ( cleaner[i] == 0) begin
 			for (int j = i; j < j+8; j++) begin
-				enforced_msg.data[j] = 0
+				enforced_msg.data[j] = 0;
 			end
 		end
 		else begin 

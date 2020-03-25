@@ -6,9 +6,9 @@
 ///
 //////////////////////////////////////////////////////////////////
 ///
-/// Author: 		Yael Karisi
+/// Author: 		Ariel Kalish
 ///
-/// Date Created: 	19.3.2020
+/// Date Created: 	25.3.2020
 ///
 /// Company: 		----
 ///
@@ -43,7 +43,7 @@ module unknown_module_tb();
 		.untrusted_msg(untrusted_msg.slave),
 		.enforced_msg(enforced_msg.master),
 		.missing_sop_indi(missing_sop_indi),
-		.missing_sop_indi(missing_sop_indi),
+		.unexpected_sop_indi(unexpected_sop_indi)
 	);
 
 	always #5 clk = ~clk;
