@@ -19,9 +19,9 @@
 //////////////////////////////////////////////////////////////////
 
 module avalon_enforcer
-// #(
-// 	parameter int DATA_WIDTH_IN_BYTES = 1'b0
-// )
+#(
+	parameter int DATA_WIDTH_IN_BYTES = 1'b0
+)
 (
 	input logic 			clk,
 	input logic 			rst,
@@ -47,6 +47,8 @@ logic 	[log2up_func(DATA_WIDTH_IN_BYTES) - 1 : 0] 	empty_mid;
 msg_sm_t 		state;
 
 
+
+// state machine
 always_ff @(posedge clk or negedge rst) begin
 	if(~rst) begin
 		current_state <= BETWEEN_MSG;
