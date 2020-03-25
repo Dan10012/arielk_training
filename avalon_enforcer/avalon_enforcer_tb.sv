@@ -50,32 +50,54 @@ module unknown_module_tb();
 	initial begin 
 		clk 				= 1'b0;
 		rst 				= 1'b0;
-		start 				= 1'b0;
+		enforced_msg.data 	= 0;
+		enforced_msg.valid 	= 1'b0;
+		enforced_msg.sop 	= 1'b0;
+		enforced_msg.eop 	= 1'b0;
+		enforced_msg.empty 	= 0;
 
-		lane_in.CLEAR_MASTER();
-		first_lane_out.CLEAR_SLAVE();
-		second_lane_out.CLEAR_SLAVE();
+
+		// clear untrusted_msg
+		untrusted_msg.rdy 	= 1'b1;
+
 
 		#50;
 		rst 				= 1'b1;
 
 		@(posedge clk);
-		lane_in.valid 		= 1'b1;
-		lane_in.data 		= {DATA_WIDTH_IN_BYTES{8'd34}};
-		lane_in.sop 		= 1'b1;
-		@(posedge clk);
-		select 				= 1'b1;
-		@(posedge clk);
-		start 				= 1'b1;
+		untrusted_msg.valid 		= 1'b1;
+		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'd34}};
+		untrusted_msg.sop 		= 1'b0;
 		@(posedge clk);
 		@(posedge clk);
-		lane_in.sop = 1'b0;
+		untrusted_msg.valid 		= 1'b1;
+		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'd34}};
+		untrusted_msg.sop 		= 1'b1;
+		@(posedge clk);
+		untrusted_msg.sop 		= 1'b0;
+		@(posedge clk);
+		untrusted_msg.sop 		= 1'b1;
 		@(posedge clk);
 		@(posedge clk);
-		lane_in.eop = '1;
+		untrusted_msg.sop 		= 1'b0;
 		@(posedge clk);
-		lane_in.CLEAR_MASTER();
-
+		untrusted_msg.valid 		= 1'b0;
+		untrusted_msg.sop 		= 1'b1;
+		untrusted_msg.eop 		= 1'b1;
+		@(posedge clk);
+		untrusted_msg.valid 		= 1'b1;
+		untrusted_msg.sop 		= 1'b0;
+		untrusted_msg.eop 		= 1'b0;
+		untrusted_msg.empty 		= 4'b1111;		
+		@(posedge clk);
+		untrusted_msg.valid 		= 1'b1;
+		untrusted_msg.sop 		= 1'b1;
+		untrusted_msg.eop 		= 1'b1;
+		@(posedge clk);
+		untrusted_msg.valid 		= 1'b0;
+		untrusted_msg.sop 		= 1'b0;
+		untrusted_msg.eop 		= 1'b0;
+		enforced_msg.data       = 0;
 		#15;
 
 		$finish();
