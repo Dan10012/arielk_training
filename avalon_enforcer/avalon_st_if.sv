@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////
 ///
-/// Project Name: 	unknown_project
+/// Project Name: 	avalon_enforcer
 ///
 /// File Name: 		avalon_st_if.sv
 ///

@@ -76,19 +76,9 @@ always_ff @(posedge clk or negedge rst) begin
 	end
 end
 
-always_ff @(posedge clk or negedge rst) begin
-	if(~rst) begin
-		select_internal <= 1'b0;
-	end else begin
-		if (start & ready_for_start) begin
-			select_internal <= select;
-		end
-	end
-end
+
 
 assign untrusted_msg.rdy 		= enforced_msg.rdy;
-assign lane_in.rdy 				= (current_state == IDLE) ? 1'b0 : selected_lane_ready;
-assign ready_for_start 			= (current_state == IDLE);
 
 always_comb begin
 
@@ -129,11 +119,6 @@ always_comb begin
 				enforced_msg.data[j] = data_mid[j];
 			end
 		end
-	end
-
-
-	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-		/* code */
 	end
 
 end
