@@ -33,6 +33,7 @@ module avalon_enforcer_tb();
 	logic 			unexpected_sop_indi;
 
 
+
 	avalon_enforcer #(
 		.DATA_WIDTH_IN_BYTES(16)
 	)
@@ -44,9 +45,10 @@ module avalon_enforcer_tb();
 		.enforced_msg(enforced_msg.master),
 		.missing_sop_indi(missing_sop_indi),
 		.unexpected_sop_indi(unexpected_sop_indi)
+
 	);
 
-	always #5 clk = ~clk;
+	always #5ns clk = ~clk;
 
 	initial begin 
 		clk 				= 1'b0;
@@ -61,18 +63,18 @@ module avalon_enforcer_tb();
 		// clear untrusted_msg
 		enforced_msg.rdy 	= 1'b1;
 
-
-		#50;
 		rst 				= 1'b1;
+		#50ns;
+		rst 				= 1'b0;
 
 		@(posedge clk);
 		untrusted_msg.valid 		= 1'b1;
-		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'd34}};
+		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'hff}};
 		untrusted_msg.sop 		= 1'b0;
 		@(posedge clk);
 		@(posedge clk);
 		untrusted_msg.valid 		= 1'b1;
-		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'd34}};
+		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'hff}};
 		untrusted_msg.sop 		= 1'b1;
 		@(posedge clk);
 		untrusted_msg.sop 		= 1'b0;
@@ -99,9 +101,8 @@ module avalon_enforcer_tb();
 		untrusted_msg.sop 		= 1'b0;
 		untrusted_msg.eop 		= 1'b0;
 		untrusted_msg.data       = 0;
-		#15;
+		#15ns;
 
-		$finish();
 
 	end
 
