@@ -18,7 +18,7 @@
 ///
 //////////////////////////////////////////////////////////////////
 
-module unknown_module_tb();
+module avalon_enforcer_tb();
 
 	localparam int DATA_WIDTH_IN_BYTES = 16;
 

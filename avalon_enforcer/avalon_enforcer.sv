@@ -55,22 +55,12 @@ always_ff @(posedge clk or negedge rst) begin
 	end else begin
 		case (state)
 			BETWEEN_MSG: begin
-				    missing_sop_indi <= (untrusted_msg.valid & !untrusted_msg.sop);
-				    unexpected_sop_indi <= 'b0;
-				    enforced_msg.sop <= (untrusted_msg.valid & untrusted_msg.sop);
-				    enforced_msg.valid <= (untrusted_msg.valid & untrusted_msg.sop);
-				    enb <= (untrusted_msg.valid & untrusted_msg.sop);
-				if (untrusted_msg.sop & untrusted_msg.valid & untrusted_msg.ready & !untrusted_msg.eop) begin
+				if (untrusted_msg.sop & untrusted_msg.valid & untrusted_msg.rdy & !(untrusted_msg.eop)) begin
 					state <= IN_MSG;
 				end
 			end
 			IN_MSG: begin
-				missing_sop_indi <= 'b0;
-				unexpected_sop_indi <= (untrusted_msg.valid & untrusted_msg.sop);
-			    enforced_msg.sop <= 'b0;
-			    enforced_msg.valid <= untrusted_msg.valid;
-			    enb <= untrusted_msg.valid;
-				if (untrusted_msg.valid & untrusted_msg.eop & untrusted_msg.valid.ready ) begin
+				if (untrusted_msg.valid & untrusted_msg.eop & untrusted_msg.rdy ) begin
 					state <= BETWEEN_MSG;
 				end
 			end	
@@ -80,9 +70,26 @@ end
 
 
 
-assign untrusted_msg.rdy 		= enforced_msg.rdy;
+assign untrusted_msg.rdy  = enforced_msg.rdy;
 
 always_comb begin
+
+
+	if (state == BETWEEN_MSG) begin
+		missing_sop_indi     = (untrusted_msg.valid & !untrusted_msg.sop);
+		unexpected_sop_indi  = 0;
+	    enforced_msg.sop     = (untrusted_msg.valid & untrusted_msg.sop);
+	    enforced_msg.valid   = (untrusted_msg.valid & untrusted_msg.sop);
+	    enb                  = (untrusted_msg.valid & untrusted_msg.sop);
+	end else begin
+		missing_sop_indi     = 0;
+		unexpected_sop_indi  = (untrusted_msg.valid & untrusted_msg.sop);
+	    enforced_msg.sop     = 0;
+	    enforced_msg.valid   = untrusted_msg.valid;
+	    enb                  = untrusted_msg.valid;
+	end
+
+
 
 	if (untrusted_msg.eop == 1) begin
 		empty_mid = untrusted_msg.empty;
@@ -90,34 +97,33 @@ always_comb begin
 		empty_mid = 0;
 	end
 
+
+
 	if (enb == 1) begin
 		enforced_msg.eop = untrusted_msg.eop;
 		enforced_msg.empty = empty_mid;
 		data_mid = untrusted_msg.data;
-	end
-	else begin 
+	end else begin 
 		enforced_msg.eop = 0;
 		enforced_msg.empty = 0;
 		data_mid = 0;
 	end
 
+
+	
 	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
 		if ( untrusted_msg.empty > i) begin
 			cleaner[i] = 1;
-		end
-		else begin 
+		end else begin 
 			cleaner[i] = 0;
 		end
 	end
 
 	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-		if ( cleaner[i] == 0) begin
-			for (int j = i; j < j+8; j++) begin
+		for (int j = i; j < j+8; j++) begin
+			if ( cleaner[i] == 0) begin
 				enforced_msg.data[j] = 0;
-			end
-		end
-		else begin 
-			for (int j = i; j < j+8; j++) begin
+			end else begin 
 				enforced_msg.data[j] = data_mid[j];
 			end
 		end
