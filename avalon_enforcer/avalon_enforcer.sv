@@ -120,7 +120,7 @@ always_comb begin
 	end
 
 	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-		for (int j = i; j < j+8; j++) begin
+		for (int j = i; j < i+8; j++) begin
 			if ( cleaner[i] == 0) begin
 				enforced_msg.data[j] = 0;
 			end else begin 
