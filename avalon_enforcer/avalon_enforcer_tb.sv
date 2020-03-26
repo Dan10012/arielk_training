@@ -51,15 +51,15 @@ module avalon_enforcer_tb();
 	initial begin 
 		clk 				= 1'b0;
 		rst 				= 1'b0;
-		enforced_msg.data 	= 0;
-		enforced_msg.valid 	= 1'b0;
-		enforced_msg.sop 	= 1'b0;
-		enforced_msg.eop 	= 1'b0;
-		enforced_msg.empty 	= 0;
+		untrusted_msg.data 	= 0;
+		untrusted_msg.valid 	= 1'b0;
+		untrusted_msg.sop 	= 1'b0;
+		untrusted_msg.eop 	= 1'b0;
+		untrusted_msg.empty 	= 0;
 
 
 		// clear untrusted_msg
-		untrusted_msg.rdy 	= 1'b1;
+		enforced_msg.rdy 	= 1'b1;
 
 
 		#50;
@@ -98,7 +98,7 @@ module avalon_enforcer_tb();
 		untrusted_msg.valid 		= 1'b0;
 		untrusted_msg.sop 		= 1'b0;
 		untrusted_msg.eop 		= 1'b0;
-		enforced_msg.data       = 0;
+		untrusted_msg.data       = 0;
 		#15;
 
 		$finish();
