@@ -18,9 +18,6 @@
 ///
 //////////////////////////////////////////////////////////////////
 
-import general_pack::*;
-
-
 module avalon_enforcer
 #(
 	parameter int DATA_WIDTH_IN_BYTES = 16
@@ -34,6 +31,7 @@ module avalon_enforcer
 
 	output logic 			missing_sop_indi,
 	output logic 			unexpected_sop_indi
+
 );
 
 typedef enum {
@@ -45,93 +43,88 @@ typedef enum {
 logic 						enb;
 logic 	[DATA_WIDTH_IN_BYTES - 1 : 0] 	cleaner;
 logic 	[(DATA_WIDTH_IN_BYTES*8) - 1 : 0] 	data_mid;
-logic 	[log2up_func(DATA_WIDTH_IN_BYTES) - 1 : 0]	empty_mid;
-msg_sm_t 		state = BETWEEN_MSG;
+logic 	[$size(untrusted_msg.empty) - 1 : 0] 	empty_mid;
+msg_sm_t 		state;
 
 
 
 // state machine
 always_ff @(posedge clk or negedge rst) begin
+	if(~rst) begin
+		state <= BETWEEN_MSG;
+	end else begin
 		case (state)
 			BETWEEN_MSG: begin
-				if (untrusted_msg.sop == 1'b1 && untrusted_msg.valid == 1'b1 && untrusted_msg.rdy == 1'b1 && untrusted_msg.eop == 1'b0) begin
+				if (untrusted_msg.sop & untrusted_msg.valid & untrusted_msg.rdy & !(untrusted_msg.eop)) begin
 					state <= IN_MSG;
 				end
 			end
 			IN_MSG: begin
-				if (untrusted_msg.valid == 1'b1 && untrusted_msg.eop == 1'b1 && untrusted_msg.rdy == 1'b1 ) begin
+				if (untrusted_msg.valid & untrusted_msg.eop & untrusted_msg.rdy ) begin
 					state <= BETWEEN_MSG;
 				end
 			end	
 		endcase
+	end
 end
 
 
 
-assign untrusted_msg.rdy  = rst ? 0 : enforced_msg.rdy;
+assign untrusted_msg.rdy  = enforced_msg.rdy;
 
 always_comb begin
 
-	if (rst == 1) begin
-		enforced_msg.sop = 0;
-		enforced_msg.data = 0;
-		enforced_msg.empty = 0;
-		enforced_msg.eop = 0;
-		enforced_msg.valid = 0;
+
+	if (state == BETWEEN_MSG) begin
+		missing_sop_indi     = (untrusted_msg.valid & !untrusted_msg.sop);
+		unexpected_sop_indi  = 0;
+	    enforced_msg.sop     = (untrusted_msg.valid & untrusted_msg.sop);
+	    enforced_msg.valid   = (untrusted_msg.valid & untrusted_msg.sop);
+	    enb                  = (untrusted_msg.valid & untrusted_msg.sop);
+	end else begin
+		missing_sop_indi     = 0;
+		unexpected_sop_indi  = (untrusted_msg.valid & untrusted_msg.sop);
+	    enforced_msg.sop     = 0;
+	    enforced_msg.valid   = untrusted_msg.valid;
+	    enb                  = untrusted_msg.valid;
 	end
 
-	else begin
-		if (state == BETWEEN_MSG) begin
-			missing_sop_indi     = (untrusted_msg.valid & !untrusted_msg.sop);
-			unexpected_sop_indi  = 0;
-		    enforced_msg.sop     = (untrusted_msg.valid & untrusted_msg.sop);
-		    enforced_msg.valid   = (untrusted_msg.valid & untrusted_msg.sop);
-		    enb                  = (untrusted_msg.valid & untrusted_msg.sop);
-		end else begin
-			missing_sop_indi     = 0;
-			unexpected_sop_indi  = (untrusted_msg.valid & untrusted_msg.sop);
-		    enforced_msg.sop     = 0;
-		    enforced_msg.valid   = untrusted_msg.valid;
-		    enb                  = untrusted_msg.valid;
-		end
+
+
+	if (untrusted_msg.eop == 1) begin
+		empty_mid = untrusted_msg.empty;
+	end else begin
+		empty_mid = 0;
+	end
 
 
 
-		if (untrusted_msg.eop == 1) begin
-			empty_mid = untrusted_msg.empty;
-		end else begin
-			empty_mid = 0;
-		end
+	if (enb == 1) begin
+		enforced_msg.eop = untrusted_msg.eop;
+		enforced_msg.empty = empty_mid;
+		data_mid = untrusted_msg.data;
+	end else begin 
+		enforced_msg.eop = 0;
+		enforced_msg.empty = 0;
+		data_mid = 0;
+	end
 
 
-
-		if (enb == 1) begin
-			enforced_msg.eop = untrusted_msg.eop;
-			enforced_msg.empty = empty_mid;
-			data_mid = untrusted_msg.data;
+	
+	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
+		if ( untrusted_msg.empty > i) begin
+			cleaner[i] = 1;
 		end else begin 
-			enforced_msg.eop = 0;
-			enforced_msg.empty = 0;
-			data_mid = 0;
+			cleaner[i] = 0;
 		end
+	end
 
-
-		
-		for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-			if ( enforced_msg.empty > i) begin
-				cleaner[i] = 1'b0;
+	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
+		for (int j = i; j < i+8; j++) begin
+			if ( cleaner[i] == 0) begin
+				enforced_msg.data[j] = 0;
 			end else begin 
-				cleaner[i] = 1'b1;
-			end
-		end
-
-		for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-			for (int j = i; j < i+8; j++) begin
-				if ( cleaner[i] == 0) begin
-					enforced_msg.data[j] = 1'b0;
-				end else begin 
-					enforced_msg.data[j] = data_mid[j];
-				end
+				enforced_msg.data[j] = data_mid[j];
 			end
 		end
 	end
