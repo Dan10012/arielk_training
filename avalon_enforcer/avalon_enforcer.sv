@@ -17,7 +17,6 @@
 /// Description: 	?????
 ///
 //////////////////////////////////////////////////////////////////
-import general_pack::*;
 
 
 module avalon_enforcer
@@ -36,11 +35,24 @@ module avalon_enforcer
 
 );
 
+//////////////////////////////////////////
+//// Imports /////////////////////////////
+//////////////////////////////////////////
+
+import general_pack::*;
+
+//////////////////////////////////////////
+//// Typedefs ////////////////////////////
+//////////////////////////////////////////
+
 typedef enum {
 		IN_MSG,
 		BETWEEN_MSG
 	} msg_sm_t;
 
+//////////////////////////////////////////
+//// Declarations ////////////////////////
+//////////////////////////////////////////
 
 logic 						enb;
 logic 	[DATA_WIDTH_IN_BYTES - 1 : 0] 	cleaner;
@@ -48,9 +60,11 @@ logic 	[(DATA_WIDTH_IN_BYTES*8) - 1 : 0] 	data_mid;
 logic 	[log2up_func(DATA_WIDTH_IN_BYTES) - 1 : 0] 	empty_mid;
 msg_sm_t 		state = BETWEEN_MSG;
 
+//////////////////////////////////////////
+//// Logic ///////////////////////////////
+//////////////////////////////////////////
 
-
-// state machine
+// this part handles state machine
 always_ff @(posedge clk or negedge rst) begin
 		case (state)
 			BETWEEN_MSG: begin
@@ -67,11 +81,12 @@ always_ff @(posedge clk or negedge rst) begin
 end
 
 
-
+// this handles rdy
 assign untrusted_msg.rdy  = enforced_msg.rdy;
 
 always_comb begin
 
+	// this handles rst
 	if (rst == 1) begin 
 		enforced_msg.valid = 0;
 		enforced_msg.sop = 0;
@@ -80,8 +95,9 @@ always_comb begin
 		enforced_msg.eop = 0;
 	end
 
-
+	// this handles the logic
 	else begin
+		// this handles values in that depend on state
 		if (state == BETWEEN_MSG) begin
 			missing_sop_indi     = (untrusted_msg.valid & !untrusted_msg.sop);
 			unexpected_sop_indi  = 0;
@@ -97,7 +113,7 @@ always_comb begin
 		end
 
 
-
+		// this takes care of empty_mid
 		if (untrusted_msg.eop == 1) begin
 			empty_mid = untrusted_msg.empty;
 		end else begin
@@ -105,7 +121,7 @@ always_comb begin
 		end
 
 
-
+		// this take care of enb dependant values
 		if (enb == 1) begin
 			enforced_msg.eop = untrusted_msg.eop;
 			enforced_msg.empty = empty_mid;
@@ -117,17 +133,18 @@ always_comb begin
 		end
 
 
-		
+		// this takes care of the cleaner
 		for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-			if ( untrusted_msg.empty > i) begin
+			if ( enforced_msg.empty > i) begin
 				cleaner[i] = 0;
 			end else begin 
 				cleaner[i] = 1;
 			end
 		end
 
+		// this parts sets the empty according to cleaner
 		for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-			for (int j = i; j < i+8; j++) begin
+			for (int j = i*8 ; j < (i*8)+8; j++) begin
 				if ( cleaner[i] == 0) begin
 					enforced_msg.data[j] = 0;
 				end else begin 

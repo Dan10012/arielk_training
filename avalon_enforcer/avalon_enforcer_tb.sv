@@ -65,7 +65,9 @@ module avalon_enforcer_tb();
 		#50ns;
 		rst 				= 1'b0;
 
+
 		@(posedge clk);
+		// missing_sop_indi need to go up
 		untrusted_msg.valid 		= 1'b1;
 		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'hff}};
 		untrusted_msg.sop 		= 1'b0;
@@ -74,28 +76,34 @@ module avalon_enforcer_tb();
 		untrusted_msg.valid 		= 1'b1;
 		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'hff}};
 		untrusted_msg.sop 		= 1'b1;
+		//switch state to IN_MSG
 		@(posedge clk);
 		untrusted_msg.sop 		= 1'b0;
 		@(posedge clk);
+		//unexpected sop supose to go up.
 		untrusted_msg.sop 		= 1'b1;
 		@(posedge clk);
 		@(posedge clk);
 		untrusted_msg.sop 		= 1'b0;
 		@(posedge clk);
+		// need to drop message
 		untrusted_msg.valid 		= 1'b0;
 		untrusted_msg.sop 		= 1'b1;
 		untrusted_msg.eop 		= 1'b1;
 		@(posedge clk);
+		// ignore empty because eop = 0
 		untrusted_msg.valid 		= 1'b1;
 		untrusted_msg.sop 		= 1'b0;
 		untrusted_msg.eop 		= 1'b0;
 		untrusted_msg.empty 		= 4'b1111;		
 		@(posedge clk);
+		// switch state
 		untrusted_msg.valid 		= 1'b1;
 		untrusted_msg.sop 		= 1'b1;
 		untrusted_msg.eop 		= 1'b1;
 		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'hf0}};
 		@(posedge clk);
+		//finish
 		untrusted_msg.valid 		= 1'b0;
 		untrusted_msg.sop 		= 1'b0;
 		untrusted_msg.eop 		= 1'b0;
