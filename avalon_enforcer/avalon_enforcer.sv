@@ -135,8 +135,8 @@ end: transfer_msg
 always_comb begin : data_handler
 	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
 		// each bit in byte_checker represent a byte in data.
-		// number of 1's in byte_checker is according to empty
-		if ( enforced_msg.empty > i )
+		// number of 0's in byte_checker is according to empty
+		if ( enforced_msg.empty > i ) begin
 			byte_checker[i] = 0;
 		end else begin 
 			// looks which byte of data should be 
