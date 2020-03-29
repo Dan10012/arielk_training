@@ -65,7 +65,7 @@ msg_sm_t 		                                    state;
 
 // this part handles state machine
 always_ff @(posedge clk or posedge rst) begin
-	// when rst is 1 machine stops working
+
 	if(~rst) begin
 		state <= BETWEEN_MSG;
 		missing_sop          = 0;
@@ -75,7 +75,7 @@ always_ff @(posedge clk or posedge rst) begin
 		enb                  = 0;
 
 	end else begin
-		case (state)
+		unique case (state)
 			BETWEEN_MSG: begin
 				missing_sop          = (untrusted_msg.valid & !untrusted_msg.sop);
 				unexpected_sop       = 0;
@@ -106,27 +106,15 @@ assign untrusted_msg.rdy  = enforced_msg.rdy;
 
 always_comb begin
 
-
-
-
-
-		// this takes care of empty_mid
-		if (untrusted_msg.eop == 1) begin
-			empty_mid = untrusted_msg.empty;
-		end else begin
-			empty_mid = 0;
-		end
-
-
 		// this take care of enb dependant values
 		if (enb == 1) begin
-			enforced_msg.eop = untrusted_msg.eop;
-			enforced_msg.empty = empty_mid;
-			data_mid = untrusted_msg.data;
+			enforced_msg.eop   = untrusted_msg.eop;
+			enforced_msg.empty = untrusted_msg.eop ? 0 : untrusted_msg.eop;
+			data_mid           = untrusted_msg.data;
 		end else begin 
-			enforced_msg.eop = 0;
+			enforced_msg.eop   = 0;
 			enforced_msg.empty = 0;
-			data_mid = 0;
+			data_mid           = 0;
 		end
 
 
