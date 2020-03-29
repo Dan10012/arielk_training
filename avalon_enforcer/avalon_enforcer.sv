@@ -14,7 +14,9 @@
 ///
 //////////////////////////////////////////////////////////////////
 ///
-/// Description: 	the model will handle avalon st message and will enforce them so the output will be a valid avalon st message
+/// Description:    the model will handle avalon stream message 
+///                 and  will enforce them so the output will be 
+///                 a valid avalon stream message.
 ///
 //////////////////////////////////////////////////////////////////
 
