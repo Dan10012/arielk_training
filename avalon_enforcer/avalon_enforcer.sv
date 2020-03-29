@@ -64,7 +64,7 @@ msg_sm_t 		                                    state;
 //////////////////////////////////////////
 
 // this part handles state machine
-always_ff @(posedge clk or posedge rst) begin
+always_ff @(posedge clk or negedge rst) begin
 
 	if(~rst) begin
 		state <= BETWEEN_MSG;
@@ -104,43 +104,44 @@ end
 // this handles rdy
 assign untrusted_msg.rdy  = enforced_msg.rdy;
 
-always_comb begin
+always_comb begin: enable_block
 
-		// this take care of enb dependant values
-		if (enb == 1) begin
-			enforced_msg.eop   = untrusted_msg.eop;
-			enforced_msg.empty = untrusted_msg.eop ? 0 : untrusted_msg.eop;
-			data_mid           = untrusted_msg.data;
+	// this take care of enb dependant values
+	if (enb == 1) begin
+		enforced_msg.eop   = untrusted_msg.eop;
+		enforced_msg.empty = untrusted_msg.eop ? untrusted_msg.empty : 1'b0;
+		data_mid           = untrusted_msg.data;
+	end else begin 
+		enforced_msg.eop   = 0;
+		enforced_msg.empty = 0;
+		data_mid           = 0;
+	end
+
+end: enable_block
+
+
+
+always_comb begin : data_handler
+
+	// this takes care of the cleaner
+	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
+		if ( enforced_msg.empty > i) begin
+			cleaner[i] = 0;
 		end else begin 
-			enforced_msg.eop   = 0;
-			enforced_msg.empty = 0;
-			data_mid           = 0;
+			cleaner[i] = 1;
 		end
+	end
 
-
-		// this takes care of the cleaner
-		for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-			if ( enforced_msg.empty > i) begin
-				cleaner[i] = 0;
+	// this parts sets the final data according to cleaner
+	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
+		for (int j = i*$bits(byte) ; j < (i*$bits(byte))+$bits(byte); j++) begin
+			if ( cleaner[i] == 0) begin
+				enforced_msg.data[j] = 0;
 			end else begin 
-				cleaner[i] = 1;
+				enforced_msg.data[j] = data_mid[j];
 			end
 		end
-
-		// this parts sets the empty according to cleaner
-		for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-			for (int j = i*$bits(byte) ; j < (i*8)+8; j++) begin
-				if ( cleaner[i] == 0) begin
-					enforced_msg.data[j] = 0;
-				end else begin 
-					enforced_msg.data[j] = data_mid[j];
-				end
-			end
-		end
-end
-
-
-
-
+	end
+end: data_handler
 
 endmodule
