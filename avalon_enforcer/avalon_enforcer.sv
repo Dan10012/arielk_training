@@ -56,9 +56,12 @@ typedef enum logic {
 //// Declarations ////////////////////////
 //////////////////////////////////////////
 
-logic                                          enb;
-logic        [DATA_WIDTH_IN_BYTES - 1 : 0]     cleaner;
-logic        [(DATA_WIDTH_IN_BYTES*8) - 1 : 0] data_mid;
+//responsible to identify if the message is suposed to be transferred
+logic                                          should_transfer;
+// looks which byte of data should pass to enforced according to empty  
+logic        [DATA_WIDTH_IN_BYTES - 1 : 0]     byte_checker;
+// the after it passed should_transfer but before byte_checker
+logic        [(DATA_WIDTH_IN_BYTES*8) - 1 : 0] vld_data;
 msg_sm_t                                       state;
 
 //////////////////////////////////////////
@@ -66,81 +69,89 @@ msg_sm_t                                       state;
 //////////////////////////////////////////
 
 // this part handles state machine
-always_ff @(posedge clk or negedge rst) begin
-
+always_ff @(posedge clk or negedge rst) begin: state_machine
 	if(~rst) begin
+
+		//when rst = 0 all outputs are set to 0
 		state <= BETWEEN_MSG;
 		missing_sop          = 0;
 		unexpected_sop       = 0;
 		enforced_msg.sop     = 0;
 		enforced_msg.valid   = 0;
-		enb                  = 0;
-
+		should_transfer      = 0;
 	end else begin
+		//state machine cases are unique
 		unique case (state)
+			//the module is currently between messages and wait for a valid sop
+			//when there is a valid sop it moves to IN_MSG
 			BETWEEN_MSG: begin
 				missing_sop          = (untrusted_msg.valid & !untrusted_msg.sop);
 				unexpected_sop       = 0;
 				enforced_msg.sop     = (untrusted_msg.valid & untrusted_msg.sop);
 				enforced_msg.valid   = (untrusted_msg.valid & untrusted_msg.sop);
-				enb                  = (untrusted_msg.valid & untrusted_msg.sop);
+				should_transfer      = (untrusted_msg.valid & untrusted_msg.sop);
 				if (untrusted_msg.sop == 1 && untrusted_msg.valid == 1 && untrusted_msg.rdy == 1 && untrusted_msg.eop == 0) begin
 					state <= IN_MSG;
 				end
 			end
+			// the module is currently reading a message and doesn't expect an sop
+			// when there is a valid eop it moves to BETWEEN_MSG
 			IN_MSG: begin
 				missing_sop          = 0;
 				unexpected_sop       = (untrusted_msg.valid & untrusted_msg.sop);
 				enforced_msg.sop     = 0;
 				enforced_msg.valid   = untrusted_msg.valid;
-				enb                  = untrusted_msg.valid;
+				should_transfer      = untrusted_msg.valid;
 				if (untrusted_msg.valid == 1 && untrusted_msg.eop == 1 && untrusted_msg.rdy == 1 ) begin
 					state <= BETWEEN_MSG;
 				end
 			end	
 		endcase
 	end
-end
-
+end: state_machine
 
 // this handles rdy
 assign untrusted_msg.rdy  = enforced_msg.rdy;
 
-always_comb begin: enable_block
+// this process checks if the sm decided to transfer 
+// the message and if so sets the correct values
+always_comb begin: transfer_msg
 
-	// this take care of enb dependant values
-	if (enb == 1) begin
+	
+	if (should_transfer == 1) begin
 		enforced_msg.eop   = untrusted_msg.eop;
 		enforced_msg.empty = untrusted_msg.eop ? untrusted_msg.empty : 1'b0;
-		data_mid           = untrusted_msg.data;
+		vld_data           = untrusted_msg.data;
 	end else begin 
 		enforced_msg.eop   = 0;
 		enforced_msg.empty = 0;
-		data_mid           = 0;
+		vld_data           = 0;
 	end
 
-end: enable_block
+end: transfer_msg
 
 
-
+// this process looks which bytes of data should be 0 according to empty
 always_comb begin : data_handler
-
-	// this takes care of the cleaner
 	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-		if ( enforced_msg.empty > i) begin
-			cleaner[i] = 0;
+		// each bit in byte_checker represent a byte in data.
+		// number of 1's in byte_checker is according to empty
+		if ( enforced_msg.empty > i )
+			byte_checker[i] = 0;
 		end else begin 
-			cleaner[i] = 1;
+			// looks which byte of data should be 
+			byte_checker[i] = 1;
 		end
-	end
-
-	// this parts sets the final data according to cleaner
+	end 
+	// this parts sets the final data according to byte_checker
 	for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-		for (int j = i*$bits(byte) ; j < (i*$bits(byte))+$bits(byte); j++) begin
-			if ( cleaner[i] == 0) begin
+		for (int j = i*$bits(byte); j < (i*$bits(byte))+$bits(byte); j++) begin
+			if ( byte_checker[i] == 0) begin
+			//if bit in byte_checker is 0 the according byte in data is zero
 				enforced_msg.data[j] = 0;
 			end else begin 
-				enforced_msg.data[j] = data_mid[j];
+			//else it is the same as vld_data	
+				enforced_msg.data[j] = vld_data[j];
 			end
 		end
 	end
