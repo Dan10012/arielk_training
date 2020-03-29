@@ -57,7 +57,6 @@ typedef enum logic {
 logic                                               enb;
 logic 	[DATA_WIDTH_IN_BYTES - 1 : 0] 	            cleaner;
 logic 	[(DATA_WIDTH_IN_BYTES*8) - 1 : 0] 	        data_mid;
-logic 	[log2up_func(DATA_WIDTH_IN_BYTES) - 1 : 0] 	empty_mid;
 msg_sm_t 		                                    state;
 
 //////////////////////////////////////////
@@ -65,19 +64,40 @@ msg_sm_t 		                                    state;
 //////////////////////////////////////////
 
 // this part handles state machine
-always_ff @(posedge clk or negedge rst) begin
+always_ff @(posedge clk or posedge rst) begin
+	// when rst is 1 machine stops working
+	if(~rst) begin
+		state <= BETWEEN_MSG;
+		missing_sop          = 0;
+		unexpected_sop       = 0;
+		enforced_msg.sop     = 0;
+		enforced_msg.valid   = 0;
+		enb                  = 0;
+
+	end else begin
 		case (state)
 			BETWEEN_MSG: begin
+				missing_sop          = (untrusted_msg.valid & !untrusted_msg.sop);
+				unexpected_sop       = 0;
+				enforced_msg.sop     = (untrusted_msg.valid & untrusted_msg.sop);
+				enforced_msg.valid   = (untrusted_msg.valid & untrusted_msg.sop);
+				enb                  = (untrusted_msg.valid & untrusted_msg.sop);
 				if (untrusted_msg.sop == 1 && untrusted_msg.valid == 1 && untrusted_msg.rdy == 1 && untrusted_msg.eop == 0) begin
 					state <= IN_MSG;
 				end
 			end
 			IN_MSG: begin
+				missing_sop          = 0;
+				unexpected_sop       = (untrusted_msg.valid & untrusted_msg.sop);
+				enforced_msg.sop     = 0;
+				enforced_msg.valid   = untrusted_msg.valid;
+				enb                  = untrusted_msg.valid;
 				if (untrusted_msg.valid == 1 && untrusted_msg.eop == 1 && untrusted_msg.rdy == 1 ) begin
 					state <= BETWEEN_MSG;
 				end
 			end	
 		endcase
+	end
 end
 
 
@@ -86,31 +106,8 @@ assign untrusted_msg.rdy  = enforced_msg.rdy;
 
 always_comb begin
 
-	// this handles rst
-	if (rst == 1) begin 
-		enforced_msg.valid = 0;
-		enforced_msg.sop = 0;
-		enforced_msg.data = 0;
-		enforced_msg.empty = 0;
-		enforced_msg.eop = 0;
-	end
 
-	// this handles the logic
-	else begin
-		// this handles values in that depend on state
-		if (state == BETWEEN_MSG) begin
-			missing_sop     = (untrusted_msg.valid & !untrusted_msg.sop);
-			unexpected_sop  = 0;
-		    enforced_msg.sop     = (untrusted_msg.valid & untrusted_msg.sop);
-		    enforced_msg.valid   = (untrusted_msg.valid & untrusted_msg.sop);
-		    enb                  = (untrusted_msg.valid & untrusted_msg.sop);
-		end else begin
-			missing_sop     = 0;
-			unexpected_sop  = (untrusted_msg.valid & untrusted_msg.sop);
-		    enforced_msg.sop     = 0;
-		    enforced_msg.valid   = untrusted_msg.valid;
-		    enb                  = untrusted_msg.valid;
-		end
+
 
 
 		// this takes care of empty_mid
@@ -152,7 +149,6 @@ always_comb begin
 				end
 			end
 		end
-	end
 end
 
 

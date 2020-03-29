@@ -29,8 +29,8 @@ module avalon_enforcer_tb();
 	avalon_st_if #(.DATA_WIDTH_IN_BYTES(DATA_WIDTH_IN_BYTES)) enforced_msg();
 
 
-	logic 			missing_sop_indi;
-	logic 			unexpected_sop_indi;
+	logic 			missing_sop;
+	logic 			unexpected_sop;
 
 
 	avalon_enforcer #(
@@ -42,8 +42,8 @@ module avalon_enforcer_tb();
 		.rst(rst),
 		.untrusted_msg(untrusted_msg.slave),
 		.enforced_msg(enforced_msg.master),
-		.missing_sop_indi(missing_sop_indi),
-		.unexpected_sop_indi(unexpected_sop_indi)
+		.missing_sop(missing_sop),
+		.unexpected_sop(unexpected_sop)
 	);
 
 	always #5ns clk = ~clk;
@@ -61,13 +61,13 @@ module avalon_enforcer_tb();
 		// clear untrusted_msg
 		enforced_msg.rdy 	= 1'b1;
 
-		rst 				= 1'b1;
+		
 		#50ns;
-		rst 				= 1'b0;
+		rst 				= 1'b1;
 
 
 		@(posedge clk);
-		// missing_sop_indi need to go up
+		// missing_sop need to go up
 		untrusted_msg.valid 		= 1'b1;
 		untrusted_msg.data 		= {DATA_WIDTH_IN_BYTES{8'hff}};
 		untrusted_msg.sop 		= 1'b0;
