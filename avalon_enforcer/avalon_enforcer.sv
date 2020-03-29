@@ -24,14 +24,14 @@ module avalon_enforcer
 	parameter int DATA_WIDTH_IN_BYTES = 16
 )
 (
-	input logic 			clk,
-	input logic 			rst,
+	input logic             clk,
+	input logic             rst,
 
 	avalon_st_if.slave      untrusted_msg,
 	avalon_st_if.master     enforced_msg,
 
-	output logic 			missing_sop,
-	output logic 			unexpected_sop
+	output logic            missing_sop,
+	output logic            unexpected_sop
 
 );
 
@@ -54,10 +54,10 @@ typedef enum logic {
 //// Declarations ////////////////////////
 //////////////////////////////////////////
 
-logic                                               enb;
-logic 	[DATA_WIDTH_IN_BYTES - 1 : 0] 	            cleaner;
-logic 	[(DATA_WIDTH_IN_BYTES*8) - 1 : 0] 	        data_mid;
-msg_sm_t 		                                    state;
+logic                                          enb;
+logic        [DATA_WIDTH_IN_BYTES - 1 : 0]     cleaner;
+logic        [(DATA_WIDTH_IN_BYTES*8) - 1 : 0] data_mid;
+msg_sm_t                                       state;
 
 //////////////////////////////////////////
 //// Logic ///////////////////////////////
