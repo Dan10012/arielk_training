@@ -14,7 +14,7 @@
 ///
 //////////////////////////////////////////////////////////////////
 ///
-/// Description: 	?????
+/// Description: 	the model will handle avalon st message and will enforce them so the output will be a valid avalon st message
 ///
 //////////////////////////////////////////////////////////////////
 
@@ -27,11 +27,11 @@ module avalon_enforcer
 	input logic 			clk,
 	input logic 			rst,
 
-	avalon_st_if.slave 		untrusted_msg,
-	avalon_st_if.master 	enforced_msg,
+	avalon_st_if.slave      untrusted_msg,
+	avalon_st_if.master     enforced_msg,
 
-	output logic 			missing_sop_indi,
-	output logic 			unexpected_sop_indi
+	output logic 			missing_sop,
+	output logic 			unexpected_sop
 
 );
 
@@ -45,7 +45,7 @@ import general_pack::*;
 //// Typedefs ////////////////////////////
 //////////////////////////////////////////
 
-typedef enum {
+typedef enum logic {
 		IN_MSG,
 		BETWEEN_MSG
 	} msg_sm_t;
@@ -54,11 +54,11 @@ typedef enum {
 //// Declarations ////////////////////////
 //////////////////////////////////////////
 
-logic 						enb;
-logic 	[DATA_WIDTH_IN_BYTES - 1 : 0] 	cleaner;
-logic 	[(DATA_WIDTH_IN_BYTES*8) - 1 : 0] 	data_mid;
+logic                                               enb;
+logic 	[DATA_WIDTH_IN_BYTES - 1 : 0] 	            cleaner;
+logic 	[(DATA_WIDTH_IN_BYTES*8) - 1 : 0] 	        data_mid;
 logic 	[log2up_func(DATA_WIDTH_IN_BYTES) - 1 : 0] 	empty_mid;
-msg_sm_t 		state = BETWEEN_MSG;
+msg_sm_t 		                                    state;
 
 //////////////////////////////////////////
 //// Logic ///////////////////////////////
@@ -99,14 +99,14 @@ always_comb begin
 	else begin
 		// this handles values in that depend on state
 		if (state == BETWEEN_MSG) begin
-			missing_sop_indi     = (untrusted_msg.valid & !untrusted_msg.sop);
-			unexpected_sop_indi  = 0;
+			missing_sop     = (untrusted_msg.valid & !untrusted_msg.sop);
+			unexpected_sop  = 0;
 		    enforced_msg.sop     = (untrusted_msg.valid & untrusted_msg.sop);
 		    enforced_msg.valid   = (untrusted_msg.valid & untrusted_msg.sop);
 		    enb                  = (untrusted_msg.valid & untrusted_msg.sop);
 		end else begin
-			missing_sop_indi     = 0;
-			unexpected_sop_indi  = (untrusted_msg.valid & untrusted_msg.sop);
+			missing_sop     = 0;
+			unexpected_sop  = (untrusted_msg.valid & untrusted_msg.sop);
 		    enforced_msg.sop     = 0;
 		    enforced_msg.valid   = untrusted_msg.valid;
 		    enb                  = untrusted_msg.valid;
@@ -144,7 +144,7 @@ always_comb begin
 
 		// this parts sets the empty according to cleaner
 		for (int i = 0; i < DATA_WIDTH_IN_BYTES; i++) begin
-			for (int j = i*8 ; j < (i*8)+8; j++) begin
+			for (int j = i*$bits(byte) ; j < (i*8)+8; j++) begin
 				if ( cleaner[i] == 0) begin
 					enforced_msg.data[j] = 0;
 				end else begin 
