@@ -8,7 +8,7 @@
 ///
 /// Author: 		Ariel Kalish
 ///
-/// Date Created: 	25.3.2020
+/// Date Created: 	26.4.2020
 ///
 /// Company: 		----
 ///
@@ -41,7 +41,7 @@ module avalon_enforcer
 //// Typedefs ////////////////////////////
 //////////////////////////////////////////
 
-typedef enum logic {
+typedef enum [1:0] logic {
 		WAITING_FOR_KEY,
 		GENERATE_SYNC,
 		ENCRYPT_MSG
