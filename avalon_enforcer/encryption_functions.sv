@@ -32,4 +32,12 @@ package encryption_functions;
 		return out_byte;
 	endfunction 
 
+	function [7:0] logic mul3 (logic [7:0] in_byte);			
+		logic [7:0] byte_mul2;
+		logic [7:0] out_byte;
+		byte_mul2 = mul2(in_byte);
+		out_byte = byte_mul2 XOR in_byte;
+
+	endfunction 
+
 endpackage
