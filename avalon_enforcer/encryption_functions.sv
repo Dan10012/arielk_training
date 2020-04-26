@@ -20,7 +20,9 @@
 
 package encryption_functions;
 
-	function [7:0] logic mul2 (logic [7:0] in_byte);			
+	import aes_model_pack ::*;
+
+	function logic [7:0] mul2 (logic [7:0] in_byte);			
 		logic [7:0] out_byte;
 		if (in_byte[7] == 0) begin
 				out_byte = in_byte<<1;
@@ -30,14 +32,18 @@ package encryption_functions;
 				out_byte = out_byte XOR 8'h1b;
 		end
 		return out_byte;
-	endfunction 
+	endfunction :
 
-	function [7:0] logic mul3 (logic [7:0] in_byte);			
+	function logic [7:0] mul3 (logic [7:0] in_byte);			
 		logic [7:0] byte_mul2;
 		logic [7:0] out_byte;
 		byte_mul2 = mul2(in_byte);
 		out_byte = byte_mul2 XOR in_byte;
 
-	endfunction 
+	endfunction :
+
+	function void ();
+		
+	endfunction : 
 
 endpackage
