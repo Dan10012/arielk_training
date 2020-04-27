@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////
 ///
-/// Project Name: 	avalon_enforcer
+/// Project Name: 	aes_encrypter
 ///
 /// File Name: 		avalon_st_if.sv
 ///
