@@ -18,9 +18,8 @@
 ///
 //////////////////////////////////////////////////////////////////
 
-import general_pack::*;
 
-interface avalon_st_if #(parameter DATA_WIDTH_IN_BYTES = 32);
+interface dvr_if #(parameter DATA_WIDTH_IN_BYTES = 32);
 	logic 	[(DATA_WIDTH_IN_BYTES*$bits(byte)) - 1 : 0] data;
 	logic 												valid;
 	logic 												rdy;

@@ -35,21 +35,21 @@ package encryption_functions;
 		end
 		else begin 
 				out_byte = in_byte<<1;
-				out_byte = out_byte XOR 8'h1b;
+				out_byte = out_byte ^ 8'h1b;
 		end
 		return out_byte;
-	endfunction :
+	endfunction 
 
 	function logic [$bits(byte) - 1 : 0] mul3 (logic [$bits(byte) - 1 : 0] in_byte);			
 		logic [$bits(byte) - 1 : 0] byte_mul2;
 		logic [$bits(byte) - 1 : 0] out_byte;
 		byte_mul2 = mul2(in_byte);
-		out_byte = byte_mul2 XOR in_byte;
+		out_byte = byte_mul2 ^ in_byte;
 		return out_byte;
-	endfunction :
+	endfunction 
 
 
-	function logic [ROW_SIZE-1:0][$bits(byte) - 1 : 0] mixcoulomns (logic [ROW_SIZE-1]][$bits(byte) - 1 : 0] in_row);	
+	function logic [ROW_SIZE-1:0] [$bits(byte) - 1 : 0] mixcoulomns (logic [ROW_SIZE-1] [$bits(byte) - 1 : 0] in_row);	
 		logic [$bits(byte) - 1 : 0] byte1_mul2 = mul2(in_row[0]);
 		logic [$bits(byte) - 1 : 0] byte1_mul3 = mul3(in_row[0]);
 		logic [$bits(byte) - 1 : 0] byte2_mul2 = mul2(in_row[1]);
@@ -59,19 +59,19 @@ package encryption_functions;
 		logic [$bits(byte) - 1 : 0] byte4_mul2 = mul2(in_row[3]);
 		logic [$bits(byte) - 1 : 0] byte4_mul3 = mul3(in_row[3]);
 		logic [3:0][$bits(byte) - 1 : 0] out_row;
-		out_row[0] = byte1_mul2 XOR byte2_mul3 XOR in_row[2] XOR in_row[3];		
-		out_row[1] = byte2_mul2 XOR byte3_mul3 XOR in_row[3] XOR in_row[0];		
-		out_row[2] = byte3_mul2 XOR byte4_mul3 XOR in_row[0] XOR in_row[1];		
-		out_row[3] = byte4_mul2 XOR byte1_mul3 XOR in_row[1] XOR in_row[2];		
+		out_row[0] = byte1_mul2 ^ byte2_mul3 ^ in_row[2] ^ in_row[3];		
+		out_row[1] = byte2_mul2 ^ byte3_mul3 ^ in_row[3] ^ in_row[0];		
+		out_row[2] = byte3_mul2 ^ byte4_mul3 ^ in_row[0] ^ in_row[1];		
+		out_row[3] = byte4_mul2 ^ byte1_mul3 ^ in_row[1] ^ in_row[2];		
 		return out_row;
-	endfunction :
+	endfunction 
 
-	function  logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] sub_and_shift (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] input_block);
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] current;
+	function  logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] sub_and_shift (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] input_block);
+		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] current;
+		logic [2*$bits(byte) - 1 : 0] [$bits(byte) - 1 : 0] out_block;
 		for (int i = 0; i < (2*$bits(byte)); i++) begin
 					current[i] = SUB_BYTES_TABLE[input_block[i]];
 		end	
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] out_block;
 		out_block[0] = current[0];
 		out_block[1] = current[5];
 		out_block[2] = current[10];
@@ -89,47 +89,46 @@ package encryption_functions;
 		out_block[14] = current[6];
 		out_block[15] = current[11];
 		return out_block;
-	endfunction : 
+	endfunction  
 
-	function  logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] main_cycle (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] input_block, logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] round_key);
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] shifted_block;
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] mixed_block;
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] after_round;
+	function  logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] main_cycle (logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] input_block, logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] round_key);
+		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] shifted_block;
+		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] mixed_block;
+		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] after_round;
 		shifted_block = sub_and_shift(input_block);
 		mixed_block[3:0] = mixcoulomns(shifted_block[3:0]);
 		mixed_block[7:4] = mixcoulomns(shifted_block[7:4]);
 		mixed_block[11:8] = mixcoulomns(shifted_block[11:8]);
 		mixed_block[15:12] = mixcoulomns(shifted_block[15:12]);
-		after_round = round_key XOR mixed_block;
+		after_round = round_key ^ mixed_block;
 		return after_round;
-	endfunction : 
+	endfunction  
 
-	function  logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] last_cycle (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] input_block, logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] round_key);
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] shifted_block;
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] after_round;
+	function  logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] last_cycle (logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] input_block, logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] round_key);
+		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] shifted_block;
+		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] after_round;
 		shifted_block = sub_and_shift(input_block);
-		after_round = round_key XOR shifted_block;
+		after_round = round_key ^ shifted_block;
 		return after_round;
-	endfunction : 
+	endfunction  
 
-	function  logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] key_generator (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] key_in, int round);
-		logic [ROW_SIZE-1:0][$bits(byte) - 1 : 0] sub_row;
-		logic [ROW_SIZE-1:0][$bits(byte) - 1 : 0] rot_byte;
-		logic [ROW_SIZE-1:0][$bits(byte) - 1 : 0] rcon_word;
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] key_out;
+	function  logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] key_generator (logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] key_in, int round);
+		logic [ROW_SIZE-1:0] [$bits(byte) - 1 : 0] sub_row;
+		logic [ROW_SIZE-1:0] [$bits(byte) - 1 : 0] rot_byte;
+		logic [ROW_SIZE-1:0] [$bits(byte) - 1 : 0] rcon_word;
+		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] key_out;
 		for (int i = 0; i < ROW_SIZE; i++) begin
-			sub_row[i] = SUB_BYTES_TABLE[key_in[i]]
+			sub_row[i] = SUB_BYTES_TABLE[key_in[i]];
 		end
-
 		rot_byte[2:0] = sub_row [3:1];
 		rot_byte[3] = sub_row[0]; 
-		rcon_word = rot_byte XOR RCON_TABLE[round];
-		key_out[3:0] = rcon_word XOR key_in[3:0];
-		key_out[7:4] = key_out[3:0] XOR key_in[7:4];
-		key_out[11:8] = key_out[7:4] XOR key_in[11:8];
-		key_out[15:11] = key_out[11:8] XOR key_in[15:11];
+		rcon_word = rot_byte ^ RCON_TABLE[round];
+		key_out[3:0] = rcon_word ^ key_in[3:0];
+		key_out[7:4] = key_out[3:0] ^ key_in[7:4];
+		key_out[11:8] = key_out[7:4] ^ key_in[11:8];
+		key_out[15:11] = key_out[11:8] ^ key_in[15:11];
 		return key_out;
-	endfunction : 
+	endfunction 
 
 
 
