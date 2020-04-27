@@ -4,7 +4,7 @@
 `define __AVALON_ST_IF
 
 
-interface avalon_st_if #(parameter int DATA_WIDTH_IN_BYTES = 4) (input clk);
+interface avalon_st_if #(parameter int DATA_WIDTH_IN_BYTES = 16) (input clk);
 
     logic   [DATA_WIDTH_IN_BYTES*8 - 1:0]           data;
     logic   [generic_func_pack::log2up_func(DATA_WIDTH_IN_BYTES) -1:0] 		empty;
