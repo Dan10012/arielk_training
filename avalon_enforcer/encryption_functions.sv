@@ -59,7 +59,7 @@ package encryption_functions;
 		out_row[3] = byte4_mul2 XOR byte1_mul3 XOR in_row[1] XOR in_row[2];		
 		return out_row;
 	endfunction :
-	
+
 	function  logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] sub_and_shift (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] input_block);
 		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] current;
 		for (int i = 0; i < (2*$bits(byte)); i++) begin
@@ -85,5 +85,37 @@ package encryption_functions;
 		return out_block;
 	endfunction : 
 
-	main
+	function  logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] main_cycle (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] input_block, logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] round_key);
+		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] shifted_block;
+		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] mixed_block;
+		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] after_round;
+		shifted_block = sub_and_shift(input_block);
+		mixed_block[3:0] = mixcoulomns(shifted_block[3:0]);
+		mixed_block[7:4] = mixcoulomns(shifted_block[7:4]);
+		mixed_block[11:8] = mixcoulomns(shifted_block[11:8]);
+		mixed_block[15:12] = mixcoulomns(shifted_block[15:12]);
+		after_round = round_key XOR mixed_block;
+		return after_round;
+	endfunction : 
+
+	function  logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] last_cycle (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] input_block, logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] round_key);
+		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] shifted_block;
+		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] after_round;
+		shifted_block = sub_and_shift(input_block);
+		after_round = round_key XOR shifted_block;
+		return after_round;
+	endfunction : 
+
+	function  logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] key_generator (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] key_in, int round);
+		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] shifted_block;
+		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] after_round;
+		shifted_block = sub_and_shift(input_block);
+		after_round = round_key XOR shifted_block;
+		return after_round;
+	endfunction : 
+
+
+
+
+
 endpackage
