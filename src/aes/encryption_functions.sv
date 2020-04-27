@@ -22,6 +22,12 @@ package encryption_functions;
 
 	import aes_model_pack ::*;
 
+	/*-- Parameters --------------------------------*/
+	localparam int ROW_SIZE = 4;
+
+
+	/*-- Functions ---------------------------------*/
+
 	function logic [$bits(byte) - 1 : 0] mul2 (logic [$bits(byte) - 1 : 0] in_byte);			
 		logic [$bits(byte) - 1 : 0] out_byte;
 		if (in_byte[7] == 0) begin
@@ -43,7 +49,7 @@ package encryption_functions;
 	endfunction :
 
 
-	function logic [3:0][$bits(byte) - 1 : 0] mixcoulomns (logic [$bits(byte) - 1 : 0] in_row);	
+	function logic [ROW_SIZE-1:0][$bits(byte) - 1 : 0] mixcoulomns (logic [ROW_SIZE-1]][$bits(byte) - 1 : 0] in_row);	
 		logic [$bits(byte) - 1 : 0] byte1_mul2 = mul2(in_row[0]);
 		logic [$bits(byte) - 1 : 0] byte1_mul3 = mul3(in_row[0]);
 		logic [$bits(byte) - 1 : 0] byte2_mul2 = mul2(in_row[1]);
@@ -107,11 +113,22 @@ package encryption_functions;
 	endfunction : 
 
 	function  logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] key_generator (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] key_in, int round);
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] shifted_block;
-		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] after_round;
-		shifted_block = sub_and_shift(input_block);
-		after_round = round_key XOR shifted_block;
-		return after_round;
+		logic [ROW_SIZE-1:0][$bits(byte) - 1 : 0] sub_row;
+		logic [ROW_SIZE-1:0][$bits(byte) - 1 : 0] rot_byte;
+		logic [ROW_SIZE-1:0][$bits(byte) - 1 : 0] rcon_word;
+		logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] key_out;
+		for (int i = 0; i < ROW_SIZE; i++) begin
+			sub_row[i] = SUB_BYTES_TABLE[key_in[i]]
+		end
+
+		rot_byte[2:0] = sub_row [3:1];
+		rot_byte[3] = sub_row[0]; 
+		rcon_word = rot_byte XOR RCON_TABLE[round];
+		key_out[3:0] = rcon_word XOR key_in[3:0];
+		key_out[7:4] = key_out[3:0] XOR key_in[7:4];
+		key_out[11:8] = key_out[7:4] XOR key_in[11:8];
+		key_out[15:11] = key_out[11:8] XOR key_in[15:11];
+		return key_out;
 	endfunction : 
 
 
