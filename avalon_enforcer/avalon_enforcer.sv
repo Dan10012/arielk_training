@@ -23,7 +23,8 @@
 
 module avalon_enforcer
 #(
-	parameter int DATA_WIDTH_IN_BYTES = 16
+	parameter int DATA_WIDTH_IN_BYTES = 16,
+	parameter logic G_RST_POLARITY = 1
 )
 (
 	input logic             clk,
