@@ -21,7 +21,7 @@ module avalon_enforcer
 #(
 	parameter int      DATA_WIDTH_IN_BYTES = 16,
 	parameter int      BLOCK_SIZE = 128,
-	parameter logic    G_RST_POLARITY = 1,
+	parameter logic    G_RST_POLARITY = 1
 
 )
 (
@@ -36,13 +36,17 @@ module avalon_enforcer
 	output logic            sync_error
 
 );
+//////////////////////////////////////////
+//// Imports /////////////////////////////
+//////////////////////////////////////////
 
+import encryption_functions::*;
 
 //////////////////////////////////////////
 //// Typedefs ////////////////////////////
 //////////////////////////////////////////
 
-typedef enum [1:0] logic {
+typedef enum logic [1:0] {
 		WAITING_FOR_KEY,
 		GENERATE_SYNC,
 		ENCRYPT_MSG
@@ -75,14 +79,15 @@ msg_sm_t                                              state;
 //// Logic ///////////////////////////////
 //////////////////////////////////////////
 
+// this part is responsible on sm movements
 always_ff @(posedge clk or negedge rst) begin: state_machine
 	if(rst == G_RST_POLARITY) begin
 		state <= WAITING_FOR_KEY;
 	end else begin
-		//state machine cases are unique
+		// state machine cases are unique
 		unique case (state)
-			//the module is currently waiting for a key
-			//when there is a valid key_and_sync it moves to GENERATE_SYNC
+			// the module is currently waiting for a key
+			// when there is a valid key_and_sync it moves to GENERATE_SYNC
 			WAITING_FOR_KEY: begin
 
 				if (key_and_sync_in.valid == 1) begin
@@ -98,13 +103,74 @@ always_ff @(posedge clk or negedge rst) begin: state_machine
 			end	
 			// the module currently waits for an avalon msg to come, when it comes it encrypts it.
 			ENCRYPT_MSG: begin
-				if (avalon_st_in.valid == 1, avalon_st_in.eop == 1, avalon_st_out.rdy ==1) begin
+				if (avalon_st_in.valid == 1 && avalon_st_in.eop == 1 && avalon_st_out.rdy ==1) begin
 					state <= WAITING_FOR_KEY;
 				end
-				else if (avalon_st_in.valid == 1, avalon_st_in.eop == 0, avalon_st_out.rdy ==1) begin
+				else if (avalon_st_in.valid == 1 && avalon_st_in.eop == 0 && avalon_st_out.rdy ==1) begin
 					state <= GENERATE_SYNC;
 				end
 			end	
 		endcase
 	end
 end: state_machine
+
+always_ff @(posedge clk or negedge rst) begin: sequential_logic
+			unique case (state)
+			// the sequental logic for each case
+			WAITING_FOR_KEY: begin
+				sync = key_and_sync_in.data[255:128];
+				round = 1;
+				first_key = key_and_sync_in.data[127:0];
+				round_key = key_generator(first_key,round);
+				current_encrypt = sync ^ key_and_sync_in.data[127:0];
+				final_encrypt = 0;
+				sync_error = 0;
+				
+			end
+			GENERATE_SYNC: begin
+				sync = (round==10)?sync:sync+1;
+				round = round+1;
+				round_key = key_generator(round_key,round);
+				current_encrypt = main_cycle(current_encrypt,round_key);
+				final_encrypt = main_cycle(current_encrypt,round_key);;
+				sync_error = (sync == 2**128 - 1);
+			end	
+			// the module currently waits for an avalon msg to come, when it comes it encrypts it.
+			ENCRYPT_MSG: begin
+				round = 1;
+				round_key = key_generator(first_key,round);
+				current_encrypt = first_key ^ sync;
+				sync_error = (sync == 2**128 - 1);
+			end	
+		endcase
+
+end: sequential_logic
+
+always_comb begin: comb_logic
+			avalon_st_out.empty = avalon_st_in.empty ;
+			avalon_st_out.eop = avalon_st_in.eop ;
+			avalon_st_out.sop = avalon_st_in.sop ;
+			unique case (state)
+			// the comb logic for each case
+			WAITING_FOR_KEY: begin
+				avalon_st_out.data = 0;
+				key_and_sync_in.rdy = 1;
+				avalon_st_in.rdy = 0;
+				avalon_st_out.valid = 0;
+				
+			end
+			GENERATE_SYNC: begin
+				avalon_st_out.data = 0;
+				key_and_sync_in.rdy = 0;
+				avalon_st_in.rdy = 0;
+				avalon_st_out.valid = 0;
+			end	
+			// the module currently waits for an avalon msg to come, when it comes it encrypts it.
+			ENCRYPT_MSG: begin
+				avalon_st_out.data = avalon_st_in.valid ? avalon_st_in.data ^ final_encrypt : 0;
+				key_and_sync_in.rdy = 0;
+				avalon_st_in.rdy = avalon_st_out.rdy;
+				avalon_st_out.valid = avalon_st_in.valid ;
+			end	
+		endcase
+end: comb_logic
