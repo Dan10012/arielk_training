@@ -28,6 +28,7 @@ package encryption_functions;
 
 	/*-- Functions ---------------------------------*/
 
+	// this function multiplie a num in 2 inside galois field
 	function logic [$bits(byte) - 1 : 0] mul2 (logic [$bits(byte) - 1 : 0] in_byte);			
 		logic [$bits(byte) - 1 : 0] out_byte;
 		if (in_byte[7] == 0) begin
@@ -40,6 +41,7 @@ package encryption_functions;
 		return out_byte;
 	endfunction 
 
+	// this function multiplie a num in 3 inside galois field
 	function logic [$bits(byte) - 1 : 0] mul3 (logic [$bits(byte) - 1 : 0] in_byte);			
 		logic [$bits(byte) - 1 : 0] byte_mul2;
 		logic [$bits(byte) - 1 : 0] out_byte;
@@ -48,7 +50,7 @@ package encryption_functions;
 		return out_byte;
 	endfunction 
 
-
+	// this function dot prudoct coulomn with the right matrix and the xor dor products
 	function logic [ROW_SIZE-1:0] [$bits(byte) - 1 : 0] mixcoulomns (logic [ROW_SIZE-1] [$bits(byte) - 1 : 0] in_row);	
 		logic [$bits(byte) - 1 : 0] byte1_mul2 = mul2(in_row[0]);
 		logic [$bits(byte) - 1 : 0] byte1_mul3 = mul3(in_row[0]);
@@ -66,6 +68,7 @@ package encryption_functions;
 		return out_row;
 	endfunction 
 
+	// this func moves row and sub bytes acording to lut
 	function  logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] sub_and_shift (logic [(2*$bits(byte)) - 1 : 0][$bits(byte) - 1 : 0] input_block);
 		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] current;
 		logic [2*$bits(byte) - 1 : 0] [$bits(byte) - 1 : 0] out_block;
@@ -91,6 +94,7 @@ package encryption_functions;
 		return out_block;
 	endfunction  
 
+	// this is the order of one main cycle
 	function  logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] main_cycle (logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] input_block, logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] round_key);
 		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] shifted_block;
 		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] mixed_block;
@@ -104,6 +108,7 @@ package encryption_functions;
 		return after_round;
 	endfunction  
 
+	// this is the order of the last cycle
 	function  logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] last_cycle (logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] input_block, logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] round_key);
 		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] shifted_block;
 		logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] after_round;
@@ -112,6 +117,7 @@ package encryption_functions;
 		return after_round;
 	endfunction  
 
+	// this generate next key in order acording to round and last key
 	function  logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] key_generator (logic [(2*$bits(byte)) - 1 : 0] [$bits(byte) - 1 : 0] key_in, int round);
 		logic [ROW_SIZE-1:0] [$bits(byte) - 1 : 0] sub_row;
 		logic [ROW_SIZE-1:0] [$bits(byte) - 1 : 0] rot_byte;
