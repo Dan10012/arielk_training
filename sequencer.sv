@@ -66,7 +66,8 @@ class serial_data_converter_data_in_sequence extends uvm_sequence #(dvr_sequence
         bit [serial_data_converter_verification_pack::DATA_WIDTH_IN_IN_BITS - 1 : 0 ] random_byte;
         int margin;
         for (int i = 0; i < size; i++) begin
-	        std::randomize(picker) with {picker dist{4:=80, [0:3]:=5};};
+	        // randomize the type of the next output
+            std::randomize(picker) with {picker dist{4:=80, [0:3]:=5};};
         	$display("picked:", picker);
           if (picker == 0) begin
 		        data_in_bytes.push_back(8'h52);

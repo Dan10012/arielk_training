@@ -41,9 +41,12 @@ class serial_data_converter_reference_model extends uvm_component;
     -- in_stream Write Function.
     -------------------------------------------------------------------------------*/
     bit [serial_data_converter_verification_pack::DATA_WIDTH_IN_IN_BITS - 1 : 0 ] inputed_data[$] = {};
+    int count = 0;
     function void write_in_stream_port (serial_data_converter_in_stream_item_type item = null);
         
-        inputed_data.push_back(item.data);
+      inputed_data.push_back(item.data);
+      $display("inputed data: ",item.data," data till now: ", inputed_data);
+      count++;
     endfunction
 
     /*-------------------------------------------------------------------------------
